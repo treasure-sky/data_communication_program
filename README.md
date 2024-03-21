@@ -1,1 +1,1 @@
-# sending_receiving_program
+24년 데이터통신과목 파일 송수신 프로그램
