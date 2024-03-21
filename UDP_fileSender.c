@@ -6,86 +6,54 @@
 #include <netinet/in.h> // 인터넷 주소 구조체
 #include <arpa/inet.h> // 인터넷 주소 변환 함수
 
-#define PORT 1234
 #define IP "192.168.0.1"
+#define PORT 1234
+#define GREETING "Greeting"
+#define OK "OK"
 
 int main(void){
-  struct sockaddr_in addr; // 수신자 정보 구조체
-  int sock;
-  char message[] = "Greeting";
+  struct sockaddr_in server_addr; // 수신자 정보 구조체
+  int sock, receive_len; // 소켓, 응답문자 개수
+  char receive_message[4];
   
+  // 소켓 생성
   if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
     perror("socket generate error");
     exit(1);
   }
 
-  // memset((char *)&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET; // IPv4로 설정
-  addr.sin_port = htons(PORT); // 포트를 bigEndian(네트워크 byte order)으로 변환 후 설정
+  memset(&server_addr, 0, sizeof(server_addr)); // 구조체 0으로 초기화
+  server_addr.sin_family = AF_INET; // IPv4로 설정
+  server_addr.sin_port = htons(PORT); // 포트를 bigEndian(네트워크 byte order)으로 변환 후 설정
 
-  if (inet_aton(IP, &addr.sin_addr) == 0) { // IP를 bigEndian(네트워크 byte order)으로 변환 후 설정
+  // IP를 bigEndian(네트워크 byte order)으로 변환 후 설정
+  if (inet_aton(IP, &server_addr.sin_addr) == 0) { 
     perror("IP format error");
     exit(1);
   }
 
-  if (sendto(sock, message, strlen(message), 0, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-    perror("sendto error");
+  // Greeting 전송
+  if (sendto(sock, GREETING, strlen(GREETING), 0, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+    perror("greeting error");
     exit(1);
   }
+
+  // OK 대기
+  if ((receive_len = recvfrom(sock, receive_message, strlen(receive_message), 0, (struct sockaddr *) &server_addr, sizeof(server_addr))) == -1) {
+    perror("ok error");
+    exit(1);
+  }
+
+  // OK 판별
+  receive_message[receive_len] = '\0'; // 전송받은 데이터를 문자열로 인식하기 위해 null값 추가
+  if (strcmp(receive_message, "OK") != 0) {
+    perror("not OK");
+    exit(1);
+  }
+
+  printf("OK");
 
   close(sock);
   return 0;
 
 }
-
-// char* getIP(){
-//   static char ip[16];
-
-//   int hostname;
-//   // hostname = gethostname();
-  
-// }
-
-
-/**
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#define SERVER "127.0.0.1"
-#define BUFLEN 512
-#define PORT 9876
-
-int main(void) {
-    struct sockaddr_in si_other;
-    int s, i, slen = sizeof(si_other);
-    char buf[BUFLEN];
-    char message[] = "Hello, Server!";
-
-    if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-        perror("socket");
-        exit(1);
-    }
-
-    memset((char *)&si_other, 0, sizeof(si_other));
-    si_other.sin_family = AF_INET;
-    si_other.sin_port = htons(PORT);
-
-    if (inet_aton(SERVER, &si_other.sin_addr) == 0) {
-        fprintf(stderr, "inet_aton() failed\n");
-        exit(1);
-    }
-
-    if (sendto(s, message, strlen(message), 0, (struct sockaddr *)&si_other, slen) == -1) {
-        perror("sendto()");
-        exit(1);
-    }
-
-    close(s);
-    return 0;
-}
-**/
