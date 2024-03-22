@@ -12,7 +12,7 @@
 int main(void){
   struct sockaddr_in receiver_addr; // 수신자 정보 구조체
   int sock, receive_len, sock_len = sizeof(receiver_addr), packet_order = 0;
-  char receive_message[4], ip[16], file_name[256], file_ack[32];
+  char receive_message[256], ip[16], file_name[256], file_ack[32];
   unsigned short int port;
 
   // ip, port 입력
@@ -72,10 +72,29 @@ int main(void){
     exit(1);
   }
 
-  // 파일 전송
+  // 파일 열기
   FILE *file = fopen(file_name, "rb");
   if(file == NULL) {
     perror("file open error");
+    exit(1);
+  }
+
+  // 파일 이름 전송
+  if (sendto(sock, file_name, strlen(file_name), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1) {
+    perror("file name send error");
+    exit(1);
+  }
+
+  // 파일 이름 도착 확인
+  if ((receive_len = recvfrom(sock, receive_message, strlen(receive_message), 0, (struct sockaddr *) &receiver_addr, (socklen_t *) &sock_len)) == -1) {
+    perror("file name error");
+    exit(1);
+  }
+
+  // 파일 이름 메세지 판별
+  receive_message[receive_len] = '\0'; // 전송받은 데이터를 문자열로 인식하기 위해 null값 추가
+  if (strcmp(receive_message, file_name) != 0) {
+    perror("not same file name");
     exit(1);
   }
 
