@@ -122,7 +122,7 @@ int main(void){
         }
         
         int now_order;
-        memcpy(&file_ack, &now_order, sizeof(int));
+        memcpy(&now_order, file_ack, sizeof(int));
         if(now_order != packet_order){
           printf("not same packet");
         } else{
