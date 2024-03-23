@@ -112,7 +112,6 @@ int main(void){
       memcpy(packet + sizeof(int), buffer, next_bytes); // 데이터 삽입
 
       // 패킷 전송
-      printf("%d번째 패킷 전송\n", packet[0]);
       if(sendto(sock, packet, next_bytes + sizeof(int), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1){
         perror("packet sending error");
         exit(1);
@@ -131,11 +130,9 @@ int main(void){
         perror("not same file name");
         exit(1);
       }
-      
+      printf("%d번째 패킷 전송 완료\n", packet_order);
       packet_order++;
     }
-    
-    
   }
 
   int temp = 0;
@@ -146,7 +143,7 @@ int main(void){
   
   fclose(file);
   close(sock);
-  printf("file sended.");
+  printf("파일 전송 완료");
   return 0;
 
 }

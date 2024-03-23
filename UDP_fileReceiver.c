@@ -24,7 +24,7 @@ int main(void){
   }
 
   // timeout 설정
-  tv.tv_sec = 10;
+  tv.tv_sec = 60;
   tv.tv_usec = 0;
   if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
     perror("set timeout error");
@@ -89,7 +89,6 @@ int main(void){
     if(next_bytes > 0) {
       int now_order; // 전송 받은 현재 패킷의 순서
       memcpy(&now_order, buffer, sizeof(int));
-      printf("%s 패킷 순서\n", buffer);
       if(now_order == 0){ // 전송이 끝났으면 종료
         break;
       }
@@ -99,20 +98,18 @@ int main(void){
         perror("packet loss error");
         exit(1);
       }
-      printf("%d패킷 응답예정\n", packet_order);
 
       if(sendto(sock, buffer, sizeof(int), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1){
         perror("send ack num err");
         exit(1);
       }
 
-      printf("%d패킷 응답완료\n", packet_order);
-
       // 파일에 쓰기
       if (fwrite(buffer + sizeof(int), 1, next_bytes - sizeof(int), file) != (int)(next_bytes - sizeof(int))) {
         perror("write file error");
         exit(1);
       }
+      printf("%d 번째 패킷 수신 완료\n", now_order);
       packet_order++;
     }
   }
