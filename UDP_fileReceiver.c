@@ -64,6 +64,7 @@ int main(void){
   }
 
   memcpy(file_name, receive_message, receive_len); // 파일 이름 복사
+  file_name[receive_len] = 0;
   printf("받아올 파일 이름: %s\n", file_name);
 
   // OK 응답
