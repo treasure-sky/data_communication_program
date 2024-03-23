@@ -9,6 +9,7 @@
 #define PORT 12345
 #define GREETING "Greeting"
 #define OK "OK"
+#define WELLDONE "WellDone"
 
 int main(void){
   struct sockaddr_in sender_addr, receiver_addr; // 발신자, 수신자 정보 구조체
@@ -54,12 +55,7 @@ int main(void){
     perror("not Greeting");
     exit(1);
   }
-
-  // OK 응답
-  if (sendto(sock, OK, strlen(OK), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1) {
-    perror("OK send error");
-    exit(1);
-  }
+  printf("received Greeting\n");
 
   // 파일 이름 수신
   if ((receive_len = recvfrom(sock, receive_message, sizeof(receive_message), 0, (struct sockaddr *) &receiver_addr, (socklen_t *)&sock_len)) == -1) {
@@ -70,11 +66,19 @@ int main(void){
   memcpy(file_name, receive_message, receive_len); // 파일 이름 복사
   printf("받아올 파일 이름: %s\n", file_name);
 
-  // 파일 이름 전송(응답)
-  if (sendto(sock, file_name, strlen(file_name), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1) {
+  // OK 응답
+  if (sendto(sock, OK, strlen(OK), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1) {
     perror("OK send error");
     exit(1);
   }
+  printf("OK sended\n");
+
+  
+  // // 파일 이름 전송(응답)
+  // if (sendto(sock, file_name, strlen(file_name), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1) {
+  //   perror("OK send error");
+  //   exit(1);
+  // }
 
   // 새로운 파일 만들기
   file = fopen(file_name, "wb");
@@ -109,10 +113,32 @@ int main(void){
         perror("write file error");
         exit(1);
       }
-      printf("%d 번째 패킷 수신 완료\n", now_order);
       packet_order++;
     }
   }
+
+  // Finish 대기
+  if ((receive_len = recvfrom(sock, receive_message, sizeof(receive_message), 0, (struct sockaddr *) &receiver_addr, (socklen_t *) &sock_len)) == -1) {
+    perror("Finish error");
+    exit(1);
+  }
+
+  // Finish 판별
+  receive_message[receive_len] = '\0'; // 전송받은 데이터를 문자열로 인식하기 위해 null값 추가
+  if (strcmp(receive_message, "Finish") != 0) {
+    perror("not Finish");
+    exit(1);
+  }
+  printf("Finish received\n");
+
+  // WellDone 전송
+  if (sendto(sock, WELLDONE, strlen(WELLDONE), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1) {
+    perror("finish send error");
+    exit(1);
+  }
+  printf("WellDone sended\n");
+  printf("파일 수신 완료, 프로그램 종료\n");
+
 
   fclose(file);
   close(sock);

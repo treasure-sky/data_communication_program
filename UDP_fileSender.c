@@ -10,6 +10,7 @@
 
 #define GREETING "Greeting"
 #define OK "OK"
+#define FINISH "Finish"
 
 int main(void){
   struct sockaddr_in receiver_addr; // 수신자 정보 구조체
@@ -63,19 +64,7 @@ int main(void){
     perror("greeting error");
     exit(1);
   }
-
-  // OK 대기
-  if ((receive_len = recvfrom(sock, receive_message, sizeof(receive_message), 0, (struct sockaddr *) &receiver_addr, (socklen_t *) &sock_len)) == -1) {
-    perror("ok error");
-    exit(1);
-  }
-
-  // OK 판별
-  receive_message[receive_len] = '\0'; // 전송받은 데이터를 문자열로 인식하기 위해 null값 추가
-  if (strcmp(receive_message, "OK") != 0) {
-    perror("not OK");
-    exit(1);
-  }
+  printf("Greeting sended\n");
 
   // 파일 열기
   FILE *file = fopen(file_name, "rb");
@@ -89,19 +78,36 @@ int main(void){
     perror("file name send error");
     exit(1);
   }
+  printf("File name sended\n");
 
-  // 파일 이름 도착 확인
+  // OK 대기
   if ((receive_len = recvfrom(sock, receive_message, sizeof(receive_message), 0, (struct sockaddr *) &receiver_addr, (socklen_t *) &sock_len)) == -1) {
-    perror("file name error");
+    perror("ok error");
     exit(1);
   }
 
-
-  // 파일 이름 메세지 판별
-  if (strcmp(receive_message, file_name) != 0) {
-    perror("not same file name");
+  // OK 판별
+  receive_message[receive_len] = '\0'; // 전송받은 데이터를 문자열로 인식하기 위해 null값 추가
+  if (strcmp(receive_message, "OK") != 0) {
+    perror("not OK");
     exit(1);
   }
+  printf("OK received\n");
+
+  
+
+  // // 파일 이름 도착 확인
+  // if ((receive_len = recvfrom(sock, receive_message, sizeof(receive_message), 0, (struct sockaddr *) &receiver_addr, (socklen_t *) &sock_len)) == -1) {
+  //   perror("file name error");
+  //   exit(1);
+  // }
+
+
+  // // 파일 이름 메세지 판별
+  // if (strcmp(receive_message, file_name) != 0) {
+  //   perror("not same file name");
+  //   exit(1);
+  // }
 
   while (!feof(file)) {
     char buffer[512]; // udp 패킷의 안전 범위
@@ -140,10 +146,31 @@ int main(void){
     perror("inform last packet error");
     exit(1);
   }
+
+  // Finish 전송
+  if (sendto(sock, FINISH, strlen(FINISH), 0, (struct sockaddr *)&receiver_addr, sock_len) == -1) {
+    perror("finish send error");
+    exit(1);
+  }
+  printf("Finish sended\n");
+
+  // WellDone 대기
+  if ((receive_len = recvfrom(sock, receive_message, sizeof(receive_message), 0, (struct sockaddr *) &receiver_addr, (socklen_t *) &sock_len)) == -1) {
+    perror("WellDone error");
+    exit(1);
+  }
+
+  // WellDone 판별
+  receive_message[receive_len] = '\0'; // 전송받은 데이터를 문자열로 인식하기 위해 null값 추가
+  if (strcmp(receive_message, "WellDone") != 0) {
+    perror("not WellDone");
+    exit(1);
+  }
+  printf("WellDone received\n");
   
   fclose(file);
   close(sock);
-  printf("파일 전송 완료");
+  printf("파일 전송 완료, 프로그램 종료");
   return 0;
 
 }
